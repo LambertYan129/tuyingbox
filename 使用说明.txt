@@ -1,0 +1,43 @@
+图影盒 v1.0 · Windows 64 位便携版
+
+在软件文件夹第一层双击「图影盒.exe」。如果使用便携 ZIP，请先完整解压。运行组件已随包提供。
+窗口、字体和控件会按 Windows 显示缩放调整，可调整窗口大小。
+首次使用时，可以在主窗口选择下载目录。默认目录为用户的 Downloads\图影盒。
+
+下载图片
+• X / Twitter：输入 @账号、主页或帖子链接。可设置起始日期 YYYY-MM-DD 和最多图片数。
+  默认处理 50 张。文件名包括日期、帖子编号和图序，重复运行会跳过已存在的文件。
+• Instagram：粘贴帖子链接，下载图文中的图片。登录时使用该站点的 Cookies。
+• 抖音图文：粘贴图文链接或分享文案。优先保存网页提供的原图，并按作品 ID 建文件夹。
+  直接解析不到图组时，程序会尝试使用随包附带的 Chromium 浏览器渲染网页。
+
+下载视频
+• 支持 YouTube、X / Twitter、哔哩哔哩和抖音，可逐行粘贴多个链接。
+• YouTube 自动配置 Deno。yt-dlp 在处理 JavaScript 挑战时调用它。
+• 默认下载当前视频。勾选「允许下载完整播放列表」后也可下载完整列表。
+• 抖音视频的 yt-dlp 下载失败时，会尝试使用抖音分享页或网页播放器提供的视频流。
+
+编辑图片
+• 添加或拖入图片，使用「上移」「下移」排序。可选竖向和横向拼接，输出为 PNG。
+• 右侧预览会随方向和顺序实时更新，并显示成品尺寸。
+• 竖向拼接按第一张图的宽度对齐，横向按第一张图的高度对齐。透明区域用白色合成。
+
+编辑视频
+• 选择或拖入 MKV，再选择 MP4 保存位置。FFmpeg 复制视频和音频轨道，保留元数据和章节。
+• 源轨道不兼容 MP4 时会显示 FFmpeg 错误；字幕和附件不会写入 MP4。
+
+Cookies 设置
+• 在主窗口点击「Cookies 设置」，可直接填写路径，或点「浏览」打开 Windows 文件选择器。
+• 各站点使用各自的 Netscape 格式 .txt 文件。JSON 和 Header String 不支持。公开内容可先留空尝试。
+• settings.json 只保存用户填写的路径和下载目录。Cookies 文件需要由用户自行保管。
+• 登录、访问或下载失败时，可在底部任务日志查看提示。网站响应和账号状态会影响下载。
+• 界面或启动发生异常时，错误对话框会给出 error.log 的保存位置。
+
+随包组件和源代码出处
+• yt-dlp https://github.com/yt-dlp/yt-dlp
+• Deno https://github.com/denoland/deno
+• FFmpeg https://ffmpeg.org/ ，本包使用 Gyan 构建 https://www.gyan.dev/ffmpeg/builds/
+• Chromium https://chromium.googlesource.com/chromium/src/ ，Playwright https://github.com/microsoft/playwright
+• gallery-dl https://codeberg.org/mikf/gallery-dl
+• Python https://www.python.org/ ，PyInstaller https://pyinstaller.org/
+• 随包组件提供的许可文本见 licenses 和 tools\chromium\LICENSE.headless_shell。

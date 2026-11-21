@@ -1,0 +1,8 @@
+# Windows x64 / Python 3.14
+gallery-dl==1.32.5
+Pillow==11.3.0
+playwright==1.63.0
+requests==2.34.2
+tkinterdnd2==0.7.0
+PyInstaller==6.22.3
+pyinstaller-hooks-contrib==2026.10
