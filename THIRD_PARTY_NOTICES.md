@@ -1,6 +1,6 @@
 # 第三方组件说明
 
-图影盒通过命令行调用 FFmpeg、yt-dlp、Deno 和 gallery-dl，并通过 Playwright 使用 Chromium。下列项目各自适用其上游许可。发布用源码目录包含图影盒代码，构建过程会从本机的 Python 环境及已准备好的工具取得运行组件。
+图影盒通过命令行调用 FFmpeg、yt-dlp、Deno、gallery-dl 和 ncmdump，并通过 Playwright 使用 Chromium。下列项目各自适用其上游许可。发布用源码目录包含图影盒代码，构建过程会从本机的 Python 环境及已准备好的工具取得运行组件。
 
 | 组件 | 上游源码或项目说明 |
 | --- | --- |
@@ -8,6 +8,7 @@
 | FFmpeg / FFprobe | [FFmpeg 源码](https://ffmpeg.org/download.html#source) · [Gyan Windows 构建](https://www.gyan.dev/ffmpeg/builds/) · [许可说明](https://ffmpeg.org/legal.html) |
 | yt-dlp | [yt-dlp](https://github.com/yt-dlp/yt-dlp) |
 | Deno | [Deno](https://github.com/denoland/deno) |
+| ncmdump 1.5.1 | [上游发布与对应源码](https://github.com/taurusxin/ncmdump/releases/tag/1.5.1)（MIT） |
 | gallery-dl | [gallery-dl 源码](https://codeberg.org/mikf/gallery-dl) |
 | Chromium | [Chromium 源码](https://chromium.googlesource.com/chromium/src/) |
 | Playwright | [Playwright for Python](https://github.com/microsoft/playwright-python) |

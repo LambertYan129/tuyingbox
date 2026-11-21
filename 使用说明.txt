@@ -1,8 +1,8 @@
-图影盒 v1.0 · Windows 64 位便携版
+图影盒 v1.1 · Windows 64 位便携版
 
 在软件文件夹第一层双击「图影盒.exe」。如果使用便携 ZIP，请先完整解压。运行组件已随包提供。
 窗口、字体和控件会按 Windows 显示缩放调整，可调整窗口大小。
-首次使用时，可以在主窗口选择下载目录。默认目录为用户的 Downloads\图影盒。
+默认下载目录为 %USERPROFILE%\Downloads\图影盒。运行时会定位到当前账号的用户目录。可在主窗口更改。
 
 下载图片
 • X / Twitter：输入 @账号、主页或帖子链接。可设置起始日期 YYYY-MM-DD 和最多图片数。
@@ -22,9 +22,15 @@
 • 右侧预览会随方向和顺序实时更新，并显示成品尺寸。
 • 竖向拼接按第一张图的宽度对齐，横向按第一张图的高度对齐。透明区域用白色合成。
 
-编辑视频
-• 选择或拖入 MKV，再选择 MP4 保存位置。FFmpeg 复制视频和音频轨道，保留元数据和章节。
-• 源轨道不兼容 MP4 时会显示 FFmpeg 错误；字幕和附件不会写入 MP4。
+格式转换
+• 先选任务与输出格式，再添加或拖入文件。输出目录留空时保存到各源文件的目录。
+• 视频可转 MP4、MKV、MOV、WebM。自动模式先尝试无损封装；也可指定仅做无损封装或重新编码。
+• 变速默认保持音高。倍率可设 0.25–4，固定时长可填秒数、分:秒或时:分:秒。
+• 提取或转换音频时，可在列表选中输入文件并查看可用音轨。批量作业对每个输入使用相同音轨序号。
+• NCM 默认还原原始 MP3 或 FLAC。其他输出格式可从菜单选择。
+• 图片可转 PNG、JPG、WebP、AVIF、GIF、ICO、PDF，并可组合等比缩放和旋转。输出静态格式时使用第一帧。
+• 队列显示每个文件的状态。遇到同名文件自动编号。点击失败行可查看原因，完整输出在任务日志中。
+• 点击「停止转换」可停止当前文件和等候中的文件。点击窗口关闭按钮可以选择停止转换并退出。已完成的文件会保留。
 
 Cookies 设置
 • 在主窗口点击「Cookies 设置」，可直接填写路径，或点「浏览」打开 Windows 文件选择器。
@@ -37,6 +43,7 @@ Cookies 设置
 • yt-dlp https://github.com/yt-dlp/yt-dlp
 • Deno https://github.com/denoland/deno
 • FFmpeg https://ffmpeg.org/ ，本包使用 Gyan 构建 https://www.gyan.dev/ffmpeg/builds/
+• ncmdump https://github.com/taurusxin/ncmdump
 • Chromium https://chromium.googlesource.com/chromium/src/ ，Playwright https://github.com/microsoft/playwright
 • gallery-dl https://codeberg.org/mikf/gallery-dl
 • Python https://www.python.org/ ，PyInstaller https://pyinstaller.org/

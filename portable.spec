@@ -20,4 +20,4 @@ app = EXE(archive, analysis.scripts, [], exclude_binaries=True,
           manifest=str(base / 'app.manifest'), upx=False)
 gallery = EXE(archive, analysis.scripts, [('X utf8', None, 'OPTION')], exclude_binaries=True,
               name='gallery-worker', console=True, upx=False)
-release = COLLECT(app, gallery, analysis.binaries, analysis.datas, name='图影盒v1.0-便携版', upx=False)
+release = COLLECT(app, gallery, analysis.binaries, analysis.datas, name='图影盒v1.1-便携版', upx=False)
