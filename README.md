@@ -1,4 +1,4 @@
-# 图影盒 v1.1.1
+# 图影盒 v1.1.2
 
 <img src="assets/app.png" width="72" height="72" alt="图影盒标志">
 
@@ -8,8 +8,8 @@
 
 | 栏目 | 功能 |
 | --- | --- |
-| 下载图片 | 批量下载 X／Twitter 图片，可按日期和数量筛选。支持 Instagram 帖子图片和抖音图文。 |
-| 下载视频 | 支持 YouTube、X／Twitter、哔哩哔哩和抖音。一行一个链接，可选下载完整播放列表。YouTube 需要处理 JavaScript 时会调用 Deno。 |
+| 下载图片 | 批量下载 X／Twitter 图片，可按日期和数量筛选。支持抖音图文。选择 Instagram 可同时保存帖子中的图片和视频。 |
+| 下载视频 | 支持 YouTube、X／Twitter、哔哩哔哩、抖音和 Instagram 视频。一行一个链接，可选下载完整播放列表。YouTube 需要处理 JavaScript 时会调用 Deno。 |
 | 编辑图片 | 支持拖入、排序、横向或竖向拼接，在导出 PNG 前可实时查看预览和成品尺寸。 |
 | 格式转换 | 视频转 MP4、MKV、MOV、WebM，支持无损封装或重新编码。视频可保持音高变速，可选固定倍率或目标时长。支持按音轨提取音频、音频转码、网易云音乐 NCM 转换，以及图片转换、等比缩放和旋转。 |
 
@@ -23,9 +23,14 @@
 - **批量转换**支持多选和拖放，显示每个文件的进度与结果。同名成品自动编号。留空输出目录时，成品保存到各自的源文件目录。
 - **变速修复与任务控制**修复部分 VP9 视频变速卡在 0% 的问题。可点击「停止转换」，也可通过关闭窗口停止并退出。源文件和已完成的成品会保留。
 
+## v1.1.2 更新
+
+- 在「下载图片」中选择 Instagram，粘贴帖子或 Reel 链接，即可保存其中的图片和视频。
+- 在「下载视频」中粘贴 Instagram 帖子或 Reel 链接时，只保存视频。需要登录的内容可在「Cookies 设置」中为 Instagram 选择 Netscape 文件。
+
 ## 下载与使用
 
-1. 前往 [Releases](https://github.com/LambertYan129/tuyingbox/releases) 下载 `tuyingbox-v1.1.1-windows-x64.zip`。
+1. 前往 [Releases](https://github.com/LambertYan129/tuyingbox/releases) 下载 `tuyingbox-v1.1.2-windows-x64.zip`。
 2. 在 Windows 64 位电脑上完整解压，双击 `图影盒.exe`。
 3. 下载目录默认为 `%USERPROFILE%\Downloads\图影盒`，运行时会定位到当前账号的用户目录。需要登录时，在 **Cookies 设置** 中为对应网站选择符合 Netscape 格式的 `.txt` 文件。
 
@@ -55,7 +60,7 @@ $python = (Resolve-Path .\.venv\Scripts\python.exe).Path
 .\build-portable.ps1 -Python $python
 ```
 
-构建输出为 `dist\图影盒v1.1-便携版\`。运行或分发时，请随 `图影盒.exe` 保留该目录中的运行组件。工具没有加入 `PATH` 时，使用 `-YtDlp`、`-FFmpeg`、`-FFprobe`、`-Deno` 和 `-NcmDump` 指定各自的 EXE 路径。用 `-NcmDumpLicense` 指定上游 ncmdump 的 LICENSE.txt。Chromium 放在自定义目录时，使用 `-ChromiumDirectory` 指定 `chrome-headless-shell.exe` 所在目录。
+构建输出为 `dist\图影盒v1.1.2-便携版\`。运行或分发时，请随 `图影盒.exe` 保留该目录中的运行组件。工具没有加入 `PATH` 时，使用 `-YtDlp`、`-FFmpeg`、`-FFprobe`、`-Deno` 和 `-NcmDump` 指定各自的 EXE 路径。用 `-NcmDumpLicense` 指定上游 ncmdump 的 LICENSE.txt。Chromium 放在自定义目录时，使用 `-ChromiumDirectory` 指定 `chrome-headless-shell.exe` 所在目录。
 
 ## 反馈问题
 

@@ -24,7 +24,7 @@ SITES = {
     'douyin': ('抖音', ('douyin.com', 'iesdouyin.com')),
     'instagram': ('Instagram', ('instagram.com',)),
 }
-VIDEO_SITES = ('youtube', 'twitter', 'bilibili', 'douyin')
+VIDEO_SITES = ('youtube', 'twitter', 'bilibili', 'douyin', 'instagram')
 NO_WINDOW = getattr(subprocess, 'CREATE_NO_WINDOW', 0)
 
 
@@ -211,7 +211,6 @@ def build_video_command(url, site, destination, ffmpeg, ytdlp, deno, cookie, pla
 
 
 def download_video(raw, destination, cookies, playlist, douyin_fallback, log):
-    ytdlp, ffmpeg = require_tool('yt-dlp'), require_tool('ffmpeg')
     successes = 0
     failures = []
     for line in raw.splitlines():
@@ -220,6 +219,12 @@ def download_video(raw, destination, cookies, playlist, douyin_fallback, log):
         try:
             url, site = site_url(line, VIDEO_SITES)
             cookie = cookie_path(cookies[site], site)
+            if site == 'instagram':
+                log('Instagram · 开始下载视频')
+                download_gallery(site, url, destination, cookie, '', '', log, videos_only=True)
+                successes += 1
+                continue
+            ytdlp, ffmpeg = require_tool('yt-dlp'), require_tool('ffmpeg')
             deno = tool('deno') if site == 'youtube' else None
             if site == 'youtube':
                 log('YouTube · Deno 自动启用' if deno else 'YouTube · 未找到 Deno，可用格式可能减少。')
@@ -273,9 +278,8 @@ def gallery_command():
     return [sys.executable, '-m', 'gallery_dl']
 
 
-def download_gallery(site, raw, destination, cookie, since, limit, log):
-    args = gallery_command() + ['--config-ignore', '--windows-filenames', '-o', 'cache.file=:memory:',
-                               '-o', f'extractor.{site}.videos=false']
+def download_gallery(site, raw, destination, cookie, since, limit, log, *, videos_only=False):
+    args = gallery_command() + ['--config-ignore', '--windows-filenames', '-o', 'cache.file=:memory:']
     if site == 'twitter':
         url, account = twitter_target(raw)
         if limit and (not limit.isdecimal() or int(limit) < 1):
@@ -284,23 +288,29 @@ def download_gallery(site, raw, destination, cookie, since, limit, log):
         # 保留帖子编号和图序，重复运行时可按同一个文件名跳过。
         filename = '{date:%Y%m%d}_{tweet_id}_{num}.{extension}'
         destination = destination / account
-        args += ['--range', f'1-{maximum}', '--sleep-request', '1-2']
+        args += ['-o', 'extractor.twitter.videos=false', '--range', f'1-{maximum}', '--sleep-request', '1-2']
         if since:
             cutoff = start_date(since).strftime('%Y%m%d')
             args += ['--filter', f"date.strftime('%Y%m%d') >= '{cutoff}'"]
     else:
         url, _ = site_url(raw, ('instagram',))
         filename = '{date:%Y%m%d_%H%M%S}_{post_shortcode}_{num}.{extension}'
+        # The portable worker downloads Instagram's already muxed video and audio.
+        args += ['-o', 'extractor.instagram.videos=merged']
+        if videos_only:
+            args += ['--filter', "extension in ('mp4', 'mov', 'webm', 'm4v')"]
     destination.mkdir(parents=True, exist_ok=True)
     args += ['--directory', str(destination), '--filename', filename]
-    if cookie:
-        args += ['--cookies', str(cookie)]
     log(f'保存到 {destination}')
-    if run_tool(args + ['--', url], log):
+    with private_cookie_copy(cookie) as copy:
+        if copy:
+            args += ['--cookies', str(copy)]
+        status = run_tool(args + ['--', url], log)
+    if status:
         if site == 'instagram' and not cookie:
-            raise RuntimeError('Instagram 图片下载失败。若日志提示 401 或要求登录，请在设置中选择 Instagram Cookies。')
-        raise RuntimeError(f'{SITES[site][0]} 图片下载失败，请查看日志。')
-    return '图片任务处理完成。'
+            raise RuntimeError('Instagram 下载失败。若日志提示 401 或要求登录，请在设置中选择 Instagram Cookies。')
+        raise RuntimeError(f'{SITES[site][0]} 下载失败，请查看日志。')
+    return 'Instagram 媒体任务处理完成。' if site == 'instagram' else '图片任务处理完成。'
 
 
 @contextmanager

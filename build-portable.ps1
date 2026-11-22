@@ -56,7 +56,7 @@ try {
     $env:PYTHONUTF8 = $previousUtf8
 }
 
-$release = Join-Path $dist '图影盒v1.1-便携版'
+$release = Join-Path $dist '图影盒v1.1.2-便携版'
 $tools = Join-Path $release 'tools'
 New-Item -ItemType Directory -Path $tools -Force | Out-Null
 Copy-Item -LiteralPath $ytDlpPath -Destination (Join-Path $tools 'yt-dlp.exe')

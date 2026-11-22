@@ -41,7 +41,7 @@ class App:
     def __init__(self, root, drag_enabled=True):
         self.root = root
         self.drag_enabled = drag_enabled
-        root.title('图影盒 v1.1')
+        root.title('图影盒 v1.1.2')
         self.display = Display(root)
         self.dpi = self.display.dpi()
         root.tk.call('tk', 'scaling', self.dpi / 72)
@@ -85,7 +85,7 @@ class App:
         self.mark.grid(row=0, column=0, sticky='w', padx=(0, self.px(10)))
         self.set_mark()
         ttk.Label(header, text='图影盒', style='Brand.TLabel').grid(row=0, column=1, sticky='w')
-        ttk.Label(header, text='v1.1', style='Muted.TLabel').grid(row=0, column=2, padx=(self.px(8), 0), sticky='s', pady=(0, self.px(4)))
+        ttk.Label(header, text='v1.1.2', style='Muted.TLabel').grid(row=0, column=2, padx=(self.px(8), 0), sticky='s', pady=(0, self.px(4)))
         self.cookie_button = ttk.Button(header, text='Cookies 设置', command=self.edit_cookies)
         self.cookie_button.grid(row=0, column=4, sticky='e')
 
@@ -271,6 +271,7 @@ class App:
         button = ttk.Button(parent, text=text, style='Action.TButton', command=callback)
         button.grid(row=row, column=0, sticky='w', pady=(9, 0))
         self.action_buttons.append(button)
+        return button
 
     def add_images_tab(self, tab):
         source = ttk.Frame(tab, style='Card.TFrame')
@@ -294,14 +295,15 @@ class App:
         ttk.Entry(self.twitter_options, width=16, textvariable=self.since).grid(row=1, column=0, sticky='w', pady=(3, 0))
         ttk.Label(self.twitter_options, text='最多图片数', style='Card.TLabel').grid(row=0, column=1, sticky='w')
         ttk.Entry(self.twitter_options, width=8, textvariable=self.limit).grid(row=1, column=1, sticky='w', pady=(3, 0))
+        self.image_action = self.action(tab, '下载图片', self.start_image, 5)
         self.update_image_form()
-        self.action(tab, '下载图片', self.start_image, 5)
 
     def update_image_form(self, event=None):
         site = PLATFORMS[self.platform.get()]
-        labels = {'twitter': '账号、主页或帖子链接', 'instagram': 'Instagram 帖子链接',
+        labels = {'twitter': '账号、主页或帖子链接', 'instagram': 'Instagram 帖子或 Reel 链接（保存其中的图片和视频）',
                   'douyin': '抖音图文链接或分享文案'}
         self.image_label.configure(text=labels[site])
+        self.image_action.configure(text='下载图片和视频' if site == 'instagram' else '下载图片')
         self.image_entry.configure(textvariable=self.image_raw[site])
         if site == 'twitter':
             self.twitter_options.grid()
@@ -311,7 +313,7 @@ class App:
 
     def add_video_tab(self, tab):
         ttk.Label(tab, text='视频链接', style='Title.TLabel').grid(row=0, column=0, sticky='w')
-        ttk.Label(tab, text='YouTube、X / Twitter、哔哩哔哩、抖音 · 一行一个链接',
+        ttk.Label(tab, text='YouTube、X / Twitter、哔哩哔哩、抖音、Instagram · 一行一个链接',
                   style='Hint.TLabel').grid(row=1, column=0, sticky='w', pady=(3, 7))
         self.video_text = tk.Text(tab, height=4, width=1, wrap='word', undo=True, font=self.fonts['body'],
                                   fg=INK, bg=SURFACE, insertbackground=INK, selectbackground=PALE, selectforeground=INK,
@@ -598,7 +600,8 @@ class App:
         if site == 'douyin':
             self.launch('下载抖音图文', lambda: douyin.download_note(value, target, cookie, self.log), download=target)
         else:
-            self.launch(f'下载 {media.SITES[site][0]} 图片',
+            label = '下载 Instagram 帖子媒体' if site == 'instagram' else '下载 X / Twitter 图片'
+            self.launch(label,
                         lambda: media.download_gallery(site, value, target, cookie, since, limit, self.log),
                         download=target)
 
