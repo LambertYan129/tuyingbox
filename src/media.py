@@ -167,13 +167,13 @@ def read_tool_progress(process, on_line, stall_timeout):
         reader.join()
 
 
-def run_tool(args, on_line, *, control=None, stall_timeout=None):
+def run_tool(args, on_line, *, control=None, stall_timeout=None, cwd=None):
     if control is not None:
         control.check()
     env = dict(os.environ, PYTHONIOENCODING='utf-8', PYTHONUTF8='1')
     with subprocess.Popen(
         args, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-        encoding='utf-8', errors='replace', env=env, creationflags=NO_WINDOW,
+        encoding='utf-8', errors='replace', env=env, creationflags=NO_WINDOW, cwd=cwd,
     ) as process:
         with control.watch(process) if control is not None else nullcontext():
             if stall_timeout is None:

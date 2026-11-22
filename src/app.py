@@ -41,7 +41,7 @@ class App:
     def __init__(self, root, drag_enabled=True):
         self.root = root
         self.drag_enabled = drag_enabled
-        root.title('图影盒 v1.1.2')
+        root.title('图影盒 v1.1.3')
         self.display = Display(root)
         self.dpi = self.display.dpi()
         root.tk.call('tk', 'scaling', self.dpi / 72)
@@ -85,7 +85,7 @@ class App:
         self.mark.grid(row=0, column=0, sticky='w', padx=(0, self.px(10)))
         self.set_mark()
         ttk.Label(header, text='图影盒', style='Brand.TLabel').grid(row=0, column=1, sticky='w')
-        ttk.Label(header, text='v1.1.2', style='Muted.TLabel').grid(row=0, column=2, padx=(self.px(8), 0), sticky='s', pady=(0, self.px(4)))
+        ttk.Label(header, text='v1.1.3', style='Muted.TLabel').grid(row=0, column=2, padx=(self.px(8), 0), sticky='s', pady=(0, self.px(4)))
         self.cookie_button = ttk.Button(header, text='Cookies 设置', command=self.edit_cookies)
         self.cookie_button.grid(row=0, column=4, sticky='e')
 

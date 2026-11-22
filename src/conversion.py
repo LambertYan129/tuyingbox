@@ -4,6 +4,7 @@ import json
 import math
 import os
 import subprocess
+from codecs import BOM_UTF16_BE, BOM_UTF16_LE
 from collections import deque
 from contextlib import nullcontext
 from dataclasses import dataclass
@@ -22,9 +23,9 @@ IMAGE_INPUTS = 'png jpg jpeg webp avif gif ico bmp tif tiff'
 VIDEO_FORMATS = ('MP4', 'MKV', 'MOV', 'WebM')
 AUDIO_FORMATS = ('MP3', 'M4A', 'FLAC', 'WAV', 'AAC', 'OGG', 'Opus')
 IMAGE_FORMATS = ('PNG', 'JPG', 'WebP', 'AVIF', 'GIF', 'GIF（低画质）', 'ICO', 'PDF')
-INPUTS = {'video': VIDEO_INPUTS, 'speed': VIDEO_INPUTS, 'extract': VIDEO_INPUTS,
+INPUTS = {'video': VIDEO_INPUTS, 'speed': VIDEO_INPUTS, 'subtitle': VIDEO_INPUTS, 'extract': VIDEO_INPUTS,
           'audio': AUDIO_INPUTS, 'ncm': 'ncm', 'image': IMAGE_INPUTS}
-FORMATS = {'video': VIDEO_FORMATS, 'speed': VIDEO_FORMATS, 'extract': AUDIO_FORMATS,
+FORMATS = {'video': VIDEO_FORMATS, 'speed': VIDEO_FORMATS, 'subtitle': VIDEO_FORMATS, 'extract': AUDIO_FORMATS,
            'audio': AUDIO_FORMATS, 'ncm': ('原始格式（MP3 / FLAC）', *AUDIO_FORMATS), 'image': IMAGE_FORMATS}
 QUALITY = {'标准': (21, 31, '192k'), '高画质 / 高音质': (17, 24, '256k'),
            '小体积': (27, 39, '128k')}
@@ -42,6 +43,7 @@ class Options:
     speed: str = '1.5'
     scale: float = 1.0
     rotation: int = 0
+    subtitle: Path | None = None
 
     @property
     def extension(self):
@@ -140,7 +142,7 @@ def speed_frame_rate(video, ratio):
     return 30
 
 
-def ffmpeg_progress(source, target, arguments, duration, progress, *, control=None, input_options=()):
+def ffmpeg_progress(source, target, arguments, duration, progress, *, control=None, input_options=(), cwd=None):
     recent = deque(maxlen=5)
     latest = {'frame': 0, 'out_time_us': 0}
 
@@ -158,10 +160,13 @@ def ffmpeg_progress(source, target, arguments, duration, progress, *, control=No
             recent.append(line)
         return False
 
-    command = [require_tool('ffmpeg'), '-hide_banner', '-loglevel', 'error', '-nostdin', '-n',
+    ffmpeg = require_tool('ffmpeg')
+    if cwd is not None:
+        ffmpeg, source, target = (Path(path).resolve() for path in (ffmpeg, source, target))
+    command = [str(ffmpeg), '-hide_banner', '-loglevel', 'error', '-nostdin', '-n',
                *input_options, '-i', str(source), *arguments, '-progress', 'pipe:1', '-nostats', str(target)]
     try:
-        result = run_tool(command, handle, control=control, stall_timeout=FFMPEG_STALL_TIMEOUT)
+        result = run_tool(command, handle, control=control, stall_timeout=FFMPEG_STALL_TIMEOUT, cwd=cwd)
     except subprocess.TimeoutExpired:
         if control is not None:
             control.check()
@@ -170,7 +175,7 @@ def ffmpeg_progress(source, target, arguments, duration, progress, *, control=No
         raise RuntimeError(' · '.join(recent) or 'FFmpeg 无法写入该格式。')
 
 
-def video_codecs(extension, quality, speed_filter=None):
+def video_codecs(extension, quality, video_filter=None):
     h264, vp9, bitrate = QUALITY[quality]
     if extension == 'webm':
         codecs = ['-c:v', 'libvpx-vp9', '-crf', str(vp9), '-b:v', '0', '-deadline', 'good',
@@ -178,9 +183,35 @@ def video_codecs(extension, quality, speed_filter=None):
     else:
         codecs = ['-c:v', 'libx264', '-preset', 'medium', '-crf', str(h264), '-c:a', 'aac']
     filters = ['pad=ceil(iw/2)*2:ceil(ih/2)*2']
-    if speed_filter:
-        filters.append(speed_filter)
+    if video_filter:
+        filters.append(video_filter)
     return [*codecs, '-pix_fmt', 'yuv420p', '-b:a', bitrate, '-vf', ','.join(filters)]
+
+
+def validate_ass_path(path):
+    if path.suffix.lower() != '.ass':
+        raise ValueError('请选择扩展名为 .ass 的字幕文件。')
+    if not path.is_file():
+        raise ValueError(f'找不到字幕 {path.name}。请手动选择 ASS 文件，或在视频旁放置同名字幕。')
+
+
+def stage_ass(source, target):
+    validate_ass_path(source)
+    data = source.read_bytes()
+    try:
+        if data.startswith((BOM_UTF16_LE, BOM_UTF16_BE)):
+            text = data.decode('utf-16')
+        else:
+            try:
+                text = data.decode('utf-8-sig')
+            except UnicodeDecodeError:
+                text = data.decode('gb18030')
+    except UnicodeDecodeError:
+        raise ValueError('ASS 字幕编码无法读取，请将字幕文件保存为 UTF-8。') from None
+    lines = [line.strip().lower() for line in text.splitlines()]
+    if '[events]' not in lines or not any(line.startswith('dialogue:') for line in lines):
+        raise ValueError('ASS 文件中没有可压制的字幕事件。')
+    target.write_text(text, encoding='utf-8')
 
 
 def convert_video(source, target, options, info, progress, log, control=None):
@@ -190,9 +221,19 @@ def convert_video(source, target, options, info, progress, log, control=None):
         raise ValueError('文件中没有视频轨道。')
     duration = source_duration(info)
     extension = options.extension
-    video_mapping = f"0:{video['index']}" if options.mode == 'speed' else '0:V'
+    video_mapping = f"0:{video['index']}" if options.mode in ('speed', 'subtitle') else '0:V'
     mapping = ['-map', video_mapping, '-map', '0:a?', '-map_metadata', '0']
     flags = ['-movflags', '+faststart'] if extension in ('mp4', 'mov') else []
+    if options.mode == 'subtitle':
+        subtitle = options.subtitle or source.with_suffix('.ass')
+        # Use a relative filter path to avoid FFmpeg filter escaping on Windows paths.
+        staged = target.parent / 'captions.ass'
+        stage_ass(subtitle, staged)
+        log(f'开始压制 ASS 字幕 · {subtitle.name}')
+        codecs = video_codecs(extension, options.quality, f'ass=filename={staged.name}')
+        ffmpeg_progress(source, target, [*mapping, '-map_chapters', '0', *codecs, *flags],
+                        duration, progress, control=control, input_options=('-threads:v', '4'), cwd=target.parent)
+        return
     if options.mode == 'speed':
         ratio, result_duration = speed_plan(duration, options)
         start = finite_number(info.get('format', {}).get('start_time')) or 0
@@ -380,7 +421,7 @@ def convert_one(source, folder, options, progress, log, control=None):
             target = work / ('output.' + options.extension)
             if options.mode == 'image':
                 convert_image(source, target, options, progress)
-            elif options.mode in ('video', 'speed'):
+            elif options.mode in ('video', 'speed', 'subtitle'):
                 convert_video(source, target, options, probe(source, control), progress, log, control)
             else:
                 convert_audio(source, target, options, probe(source, control), progress, control)
@@ -391,6 +432,8 @@ def convert_one(source, folder, options, progress, log, control=None):
             value = parse_speed_value(options.speed, options.by_duration)
             unit = 's' if options.by_duration else 'x'
             name += f'_变速_{value:.12g}{unit}'
+        elif options.mode == 'subtitle':
+            name += '_字幕压制'
         return publish(target, folder, name, target.suffix.lower())
 
 

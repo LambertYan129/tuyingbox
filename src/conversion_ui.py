@@ -13,7 +13,7 @@ import conversion
 import media
 
 
-MODES = {'视频格式转换': 'video', '视频变速': 'speed', '提取视频音频': 'extract',
+MODES = {'视频格式转换': 'video', '视频变速': 'speed', '压制 ASS 字幕': 'subtitle', '提取视频音频': 'extract',
          '音频格式转换': 'audio', '网易云音乐 NCM': 'ncm', '图片格式转换': 'image'}
 FIXED_RATE = '固定倍率'
 FIXED_DURATION = '固定时长'
@@ -43,6 +43,7 @@ class ConversionPanel:
         self.track_var = tk.StringVar(value='第 1 条')
         self.scale_var = tk.StringVar(value='100%')
         self.rotation_var = tk.StringVar(value='不旋转')
+        self.subtitle = tk.StringVar()
         self.directory = tk.StringVar()
         self.hint = tk.StringVar()
         self.detail = tk.StringVar()
@@ -55,6 +56,7 @@ class ConversionPanel:
         self.format_box.bind('<<ComboboxSelected>>', self.form_changed)
         self.options = ttk.Frame(tab, style='Card.TFrame')
         self.options.grid(row=1, column=0, sticky='ew', pady=(6, 0))
+        self.options.columnconfigure(5, weight=1)
         self.kind = self.combo(self.options, '封装方式', self.encode_var, ('自动', '仅无损封装', '重新编码'), 0, 0, 15)
         self.kind.bind('<<ComboboxSelected>>', self.form_changed)
         self.quality = self.combo(self.options, '质量', self.quality_var, tuple(conversion.QUALITY), 0, 2, 18)
@@ -70,6 +72,14 @@ class ConversionPanel:
                                      values=('第 1 条',))
         self.scale = self.combo(self.options, '等比缩放', self.scale_var, tuple(SCALES), 0, 0, 8)
         self.rotation = self.combo(self.options, '旋转', self.rotation_var, tuple(ROTATIONS), 0, 2, 12)
+        self.subtitle_fields = ttk.Frame(self.options, style='Card.TFrame')
+        self.subtitle_fields.grid(row=1, column=0, columnspan=6, sticky='ew', pady=(6, 0))
+        self.subtitle_fields.columnconfigure(1, weight=1)
+        ttk.Label(self.subtitle_fields, text='ASS 字幕', style='Card.TLabel').grid(row=0, column=0, padx=(0, 7))
+        self.subtitle_entry = ttk.Entry(self.subtitle_fields, textvariable=self.subtitle, width=1)
+        self.subtitle_entry.grid(row=0, column=1, sticky='ew')
+        self.subtitle_button = ttk.Button(self.subtitle_fields, text='选择字幕', command=self.choose_subtitle)
+        self.subtitle_button.grid(row=0, column=2, padx=(6, 0))
         self.hint_label = ttk.Label(tab, textvariable=self.hint, style='Hint.TLabel')
         self.hint_label.grid(row=2, column=0, sticky='ew', pady=(4, 6))
         self.hint_label.bind('<Configure>', lambda event: self.hint_label.configure(wraplength=event.width)
@@ -163,6 +173,9 @@ class ConversionPanel:
         elif mode == 'image':
             self.show_combo(self.scale)
             self.show_combo(self.rotation)
+        elif mode == 'subtitle':
+            self.show_combo(self.quality)
+            self.subtitle_fields.grid()
         elif mode in ('extract', 'audio'):
             self.track_label.grid(row=0, column=0, sticky='w', padx=(0, 7))
             self.track_box.grid(row=0, column=1, sticky='w', padx=(0, 12))
@@ -182,6 +195,7 @@ class ConversionPanel:
             'extract': '按音轨序号提取。批量处理时对每个文件使用同一序号。',
             'audio': '原文件保留。支持的输出格式会尽量保留标签和封面。',
             'image': '可直接转换，也可同时缩放和旋转。',
+            'subtitle': '字幕直接烧录进画面。留空时自动匹配视频旁的同名 ASS。手动选择的字幕用于当前队列。',
             'ncm': '原始格式保留文件内的 MP3 或 FLAC，以及可读取的标签和封面。',
         }.get(self.mode, '')
         if self.mode == 'speed':
@@ -204,6 +218,12 @@ class ConversionPanel:
         patterns = ' '.join('*.' + suffix for suffix in conversion.INPUTS[self.mode].split())
         paths = filedialog.askopenfilenames(parent=self.root, filetypes=[('适用文件', patterns), ('所有文件', '*.*')])
         self.add_paths(paths)
+
+    def choose_subtitle(self):
+        path = filedialog.askopenfilename(parent=self.root, title='选择 ASS 字幕',
+                                          filetypes=[('ASS 字幕', '*.ass')])
+        if path:
+            self.subtitle.set(path)
 
     def drop_files(self, event):
         self.add_paths(self.root.tk.splitlist(event.data))
@@ -315,13 +335,17 @@ class ConversionPanel:
             messagebox.showinfo('请选择文件', '请添加要转换的文件。', parent=self.root)
             return
         by_duration = self.speed_mode.get() == FIXED_DURATION
-        options = conversion.Options(
-            self.mode, self.format_var.get(), self.encode_var.get(), self.quality_var.get(),
-            max(0, self.track_box.current()), by_duration,
-            self.speed_duration.get() if by_duration else self.speed_rate.get(),
-            SCALES[self.scale_var.get()], ROTATIONS[self.rotation_var.get()],
-        )
         try:
+            subtitle = None
+            if self.mode == 'subtitle' and self.subtitle.get().strip():
+                subtitle = media.clean_path(self.subtitle.get())
+                conversion.validate_ass_path(subtitle)
+            options = conversion.Options(
+                self.mode, self.format_var.get(), self.encode_var.get(), self.quality_var.get(),
+                max(0, self.track_box.current()), by_duration,
+                self.speed_duration.get() if by_duration else self.speed_rate.get(),
+                SCALES[self.scale_var.get()], ROTATIONS[self.rotation_var.get()], subtitle=subtitle,
+            )
             if options.mode == 'speed':
                 conversion.parse_speed_value(options.speed, options.by_duration)
             raw = self.directory.get().strip()
@@ -352,7 +376,7 @@ class ConversionPanel:
         self.stop_button.state(['disabled' if enabled else '!disabled'])
         widgets = (self.mode_box, self.format_box, self.kind, self.quality, self.speed_box, self.speed_entry,
                    self.speed_quality, self.track_box, self.scale, self.rotation, self.add_button, self.remove_button,
-                   self.output_entry, self.output_button)
+                   self.output_entry, self.output_button, self.subtitle_entry, self.subtitle_button)
         for widget in widgets:
             widget.state(['!disabled' if enabled else 'disabled'])
 

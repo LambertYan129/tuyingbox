@@ -44,7 +44,7 @@ def main():
         return app.main(report_error)
     except Exception:
         message = report_error(*sys.exc_info())
-        ctypes.windll.user32.MessageBoxW(None, f'图影盒无法启动。\n\n{message}', '图影盒 v1.1.2', 0x10)
+        ctypes.windll.user32.MessageBoxW(None, f'图影盒无法启动。\n\n{message}', '图影盒 v1.1.3', 0x10)
         return 1
 
 
