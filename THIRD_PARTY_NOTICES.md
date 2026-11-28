@@ -6,7 +6,8 @@
 | --- | --- |
 | Python / Tk | [CPython](https://github.com/python/cpython) / [Tcl/Tk](https://www.tcl-lang.org/) |
 | FFmpeg / FFprobe | [FFmpeg 源码](https://ffmpeg.org/download.html#source) · [Gyan Windows 构建](https://www.gyan.dev/ffmpeg/builds/) · [许可说明](https://ffmpeg.org/legal.html) |
-| yt-dlp | [yt-dlp](https://github.com/yt-dlp/yt-dlp) |
+| yt-dlp | [yt-dlp 2026.11.23](https://github.com/yt-dlp/yt-dlp/releases/tag/2026.11.23) |
+| pypdfium2 / PDFium | [pypdfium2](https://github.com/pypdfium2-team/pypdfium2) / [PDFium](https://pdfium.googlesource.com/pdfium/) |
 | Deno | [Deno](https://github.com/denoland/deno) |
 | ncmdump 1.5.1 | [上游发布与对应源码](https://github.com/taurusxin/ncmdump/releases/tag/1.5.1)（MIT） |
 | gallery-dl | [gallery-dl 源码](https://codeberg.org/mikf/gallery-dl) |

@@ -17,6 +17,7 @@ import douyin
 import media
 from conversion_ui import ConversionPanel
 from display import Display
+from pdf_ui import PdfPanel
 
 
 BG = '#edf2ef'
@@ -41,7 +42,7 @@ class App:
     def __init__(self, root, drag_enabled=True):
         self.root = root
         self.drag_enabled = drag_enabled
-        root.title('图影盒 v1.1.3')
+        root.title('图影盒 v1.1.4')
         self.display = Display(root)
         self.dpi = self.display.dpi()
         root.tk.call('tk', 'scaling', self.dpi / 72)
@@ -85,7 +86,7 @@ class App:
         self.mark.grid(row=0, column=0, sticky='w', padx=(0, self.px(10)))
         self.set_mark()
         ttk.Label(header, text='图影盒', style='Brand.TLabel').grid(row=0, column=1, sticky='w')
-        ttk.Label(header, text='v1.1.3', style='Muted.TLabel').grid(row=0, column=2, padx=(self.px(8), 0), sticky='s', pady=(0, self.px(4)))
+        ttk.Label(header, text='v1.1.4', style='Muted.TLabel').grid(row=0, column=2, padx=(self.px(8), 0), sticky='s', pady=(0, self.px(4)))
         self.cookie_button = ttk.Button(header, text='Cookies 设置', command=self.edit_cookies)
         self.cookie_button.grid(row=0, column=4, sticky='e')
 
@@ -95,6 +96,7 @@ class App:
         self.add_video_tab(self.add_tab('下载视频'))
         self.add_collage_tab(self.add_tab('编辑图片'))
         self.conversion = ConversionPanel(self, self.add_tab('格式转换'))
+        self.pdf = PdfPanel(self, self.add_tab('PDF 转 PNG'))
         self.tabs.enable_traversal()
         self.tabs.bind('<<NotebookTabChanged>>', self.layout_workarea)
 
@@ -258,7 +260,7 @@ class App:
             return
         self.workspace_layout = layout
         editing_images = self.tabs.tab(selected, 'text') == '编辑图片'
-        if converting:
+        if converting or panel is self.pdf.tab:
             self.download_controls.grid_remove()
         else:
             self.download_controls.grid()
@@ -672,7 +674,9 @@ class App:
     def stop_conversion(self):
         if self.task_control is None or self.task_control.cancelled.is_set():
             return
-        self.conversion.stop_button.state(['disabled'])
+        for panel in (self.conversion, self.pdf):
+            if panel.running:
+                panel.stop_button.state(['disabled'])
         self.status.set('正在停止转换…')
         try:
             self.task_control.cancel()
@@ -706,8 +710,9 @@ class App:
                 if self.close_after_task:
                     self.root.destroy()
                     return
-                if self.conversion.running:
-                    self.conversion.edit_state(True)
+                for panel in (self.conversion, self.pdf):
+                    if panel.running:
+                        panel.edit_state(True)
                 self.bar.stop()
                 self.bar.configure(mode='determinate')
                 self.progress.set(100 if event == 'done' else 0)

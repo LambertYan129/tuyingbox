@@ -49,6 +49,10 @@ $previousUtf8 = $env:PYTHONUTF8
 try {
     if ($BuildPythonPath) { $env:PYTHONPATH = $BuildPythonPath }
     $env:PYTHONUTF8 = '1'
+    $pdfLicenses = & $Python -B -c 'from importlib.metadata import files; print(next(p for p in files("pypdfium2") if p.name == "METADATA").locate().parent / "licenses")'
+    if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $pdfLicenses -PathType Container)) {
+        throw 'Install pypdfium2 from requirements-build.txt to provide the PDFium renderer and licenses.'
+    }
     & $Python -B -m PyInstaller --noconfirm --workpath $build --distpath $dist (Join-Path $project 'portable.spec')
     if ($LASTEXITCODE -ne 0) { throw "PyInstaller exited with code $LASTEXITCODE." }
 } finally {
@@ -56,7 +60,7 @@ try {
     $env:PYTHONUTF8 = $previousUtf8
 }
 
-$release = Join-Path $dist '图影盒v1.1.3-便携版'
+$release = Join-Path $dist '图影盒v1.1.4-便携版'
 $tools = Join-Path $release 'tools'
 New-Item -ItemType Directory -Path $tools -Force | Out-Null
 Copy-Item -LiteralPath $ytDlpPath -Destination (Join-Path $tools 'yt-dlp.exe')
@@ -79,6 +83,7 @@ if (Test-Path -LiteralPath $FFmpegLicense -PathType Leaf) {
     Copy-Item -LiteralPath $FFmpegLicense -Destination (Join-Path $notices 'FFmpeg.txt')
 }
 Copy-Item -LiteralPath $NcmDumpLicense -Destination (Join-Path $notices 'ncmdump.txt')
+Copy-Item -LiteralPath $pdfLicenses -Destination (Join-Path $notices 'pypdfium2') -Recurse
 $pythonPackages = & $Python -B -c 'import sysconfig; print(sysconfig.get_path("purelib"))'
 foreach ($package in @('gallery_dl', 'pillow', 'requests', 'certifi', 'charset_normalizer', 'idna', 'urllib3', 'playwright', 'tkinterdnd2', 'greenlet', 'pyee')) {
     foreach ($metadata in Get-ChildItem -LiteralPath $pythonPackages -Directory -Filter "$package-*.dist-info") {
@@ -90,4 +95,5 @@ foreach ($package in @('gallery_dl', 'pillow', 'requests', 'certifi', 'charset_n
 }
 Copy-Item -LiteralPath (Join-Path $project '使用说明.txt') -Destination $release
 Copy-Item -LiteralPath (Join-Path $project 'THIRD_PARTY_NOTICES.md') -Destination $release
+Copy-Item -LiteralPath (Join-Path $project 'CHANGELOG.md') -Destination $release
 Write-Output $release
